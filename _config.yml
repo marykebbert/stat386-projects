@@ -18,15 +18,15 @@
 # You can create any custom variable you would like, and they will be accessible
 # in the templates via {{ site.myvariable }}.
 
-title: Blog Title # Make a title for your blog
+title: Data Science - BYU STAT 386 # Make a title for your blog
 email: marykebbert@gmail.com # Add your email 
 description: >- # this means to ignore newlines until "baseurl:"
- Change the description so that it describes your blog
+ Join me as I learn data science techniques!
 baseurl: "/stat386-projects" # keep this the same or change it to the name of the repository 
 url: "https://esnt.github.io" #  change this to "https://<your-github-username>.github.io"
 image: "assets/images/image5.jpg"
 author: Mary Curtis
-copyright: ABCD # Your initials or what you want the copyright to be.  Leave empty for no copyright
+copyright: # Your initials or what you want the copyright to be.  Leave empty for no copyright
 
 # Social media users names.  Leave fields blank that you don't want displayed
 twitter_username:
