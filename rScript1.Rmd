@@ -1,0 +1,2164 @@
+---
+title: "Section 2"
+output: html_document
+---
+```{r setup, include=FALSE, collapse=TRUE}
+library(tidyverse)
+library(knitr)
+library(lubridate)
+options(lubridate.verbose = TRUE) # not always super helpful, but good for pedagogical purposes
+library(nycflights13)
+```
+
+### Environment
+We will be using hands on programming in R for the next bit
+```{r}
+die <- 1:6
+die
+```
+* ls() prints the environment
+```{r}
+ls()
+```
+* remove() removes an object from the environment
+```{r}
+remove(die)
+```
+* To remove ALL variables... 
+```{r}
+die <- 1:6
+die1 <- 1:6
+remove(list = ls())
+```
+* To save things in your environment
+  + save everything and open it
+```{r}
+die <- 1:6
+die1 <- 1:6
+save.image(file = "my_session.Rdata")
+load("my_session.Rdata")
+```
+  + only save certain objects
+```{r}
+save(die, file = "die.Rdata")
+load("die.Rdata") # loads the object "die" again.
+```
+  
+### Vector operations  
+#### Vector operations with a scalar  
+  * Use parenthesis to help you
+    + In R, precedence follow the BEDMAS order:
+      * Brackets ()
+      * Exponents ^
+      * Division / and multiplication *
+      * Addition + and subtraction -
+```{r}
+die + 2 #does operation with every element of the vector with the scalar
+# adds two to each element of die
+die * 2
+die ^ 2
+1:6+2
+1:(6+2)
+```
+    
+#### Vector operations with other vectors
+When you use two or more vectors in an operation, R lines up the vectors and performs a sequence of individual operations, ELEMENT BY ELEMENT.
+```{r}
+die + die1
+die ^ die1
+die*die
+```
+#### Operations on vectors of differing lengths
+R will repeat the shorter vector until it is as long as the longer vector, then do element-wise operations (this is called vector recycling). This will give a warning.
+```{r}
+vec2 <- 1:4
+die + vec2
+```
+#### Inner products and outer products
+##### Inner products of vectors
+Basically the dot-product of 2 vectors. The first is long-hand. The second is short-hand.
+(%*%) is for vector multiplication.  
+The output for vector multiplication is a matrix.
+```{r}
+sum(die * die)
+die %*% die
+```
+##### Outer products of vectors
+Also outputs a matrix. Each element in each vector will be multiplied by each element of the corresponding matrix.  
+The operator for this is %o%.
+```{r}
+die %o% die
+```
+### Functions
+* Allow automation of common tasks, avoiding copying and pasting
+
+#### Examples:  
+* round() rounds to the nearest integer
+* ceiling() rounds to the nearest integer ABOVE
+* floor() rounds to the nearest integer BELOW
+* exp(1) gives Euler's number
+* factorial(3) gives 3 * 2 * 1
+* round(mean())
+  + R works from inner to outer when functions are themselves arguments of other functions  
+
+```{r}
+round(pi)
+ceiling(pi)
+floor(pi)
+exp(1)
+factorial(3)
+round(mean(die))
+```
+
+#### Functions with arguments
+* If I specify the argument name, order does not matter.
+* To find the arguments, you can run the function **args(function)**
+```{r}
+round(pi, digits = 2)
+```
+##### Example: roll a die 1 time
+```{r}
+sample(x = die, size = 1)
+sample(die, 1) # equivalent
+sample(size = 1, x = die) 
+```
+##### Example: roll a die many times
+* If you do not sample with replacement, the max size you can do is 6
+* Otherwise, set **replace = T**
+* How to get reproducible samples
+  + must set the seed
+```{r}
+ # sample(die, size = 100) causes an error
+sample(die, size = 6)
+sample(die, size = 6, replace = T)
+
+set.seed(1) # allows your randomization to be reproducible (must run this right before)
+sample(die, size = 2, replace = T)
+```
+##### Example: roll a weighted die
+* By default, each element gets an equal probability
+```{r}
+sample(die, size = 12, replace = T, prob = c(.1,.1,.1,.1,.1,.5))
+sample(die, size = 12, replace = T, prob = c(rep(1,5),5)) # Equivalent (makes sure that it sums to 1)
+```
+#### Writing Functions
+
+* Every function has 3 basic parts:
+  + A name
+  + A body of code
+  + A set of arguments (usually)
+* Syntax
+  + function_name <- function(<ARGUMENTS>){BODY OF CODE>}
+  + You do not need curly braces if your body of code is on the same line
+* Styling (good practice)
+  + R-studio indents for you, making functions easy to read
+  + where possible, avoid overriding existing functions and variables
+    * If you override a function, you'll need to refer to it with it's package
+  + In general, use comments to explain what you are doing in your functions
+
+#### Example: Settlers of Catan, roll two die
+##### Return 2 die
+```{r}
+settlers_roll <- function(){
+  die <- 1:6
+  dice <- sample(die, size = 2, replace = T)
+  dice
+}
+
+settlers_roll()
+```
+##### Return sum of 2 die
+```{r}
+settlers_roll <- function(){
+  die <- 1:6
+  dice <- sample(die, size = 2, replace = T)
+  sum(dice)
+}
+
+settlers_roll()
+```
+#### Example: Dungeons and dragons
+* Sides of die change and number of die change
+* To define defaults, do this when defining the function
+##### Each die is the same size
+```{r}
+dnd_roll <- function(sides = 6, num_dice = 1){
+  dice <- sample(1:sides, size = num_dice, replace = T)
+  dice
+}
+dnd_roll() # only works because there is a default behavior
+dnd_roll(sides = 4, num_dice = 1)
+```
+##### Two possibilities for the size of the die
+```{r}
+dnd_roll_general <- function(sides1 = 6, num_dice1 = 1,
+                             sides2 = 6, num_dice2 = 1){
+  dice1 <- sample(1:sides1, size = num_dice1, replace = T)
+  dice2 <- sample(1:sides2, size = num_dice2, replace = T)
+  list(dice1, dice2)
+}
+dnd_roll_general(6,6,20,10)
+```
+##### The user can specify replace = TRUE/FALSE
+* One way to do it:
+```{r}
+dnd_roll <- function(sides = 6, num_dice = 1, replace = T){
+  dice <- sample(1:sides, size = num_dice, replace = replace)
+  dice
+}
+dnd_roll()
+```
+* Another way to do it (with ellipses)
+  + Ellipses refer to arbitrary arguments to be passed in to functions within
+    * (What if multiple args use the same arg passed in via...)
+      + if the function can use the args passed in through the ..., it will:
+```{r}
+dnd_roll <- function(sides = 6, num_dice = 1, ...){
+  dice <- sample(1:sides, size = num_dice, ...)
+  dice
+}
+dnd_roll(num_dice = 6, replace = F)
+
+my_summary <- function(vec, ...){
+  c(mean(vec, ...),
+    median(vec, ...),
+    min(vec)) # no additional arguments passed to this
+}
+
+my_summary(c(1,2,NA,3)) # everything is NA bc na.rm = F by default
+
+my_summary(c(1,2,NA,3), na.rm = T) # min() still uses na.rm = F
+```
+##### Flip a coin
+* User-defined number of times
+* Return the proportion of heads
+```{r}
+coin_flip <- function(num_flips = 1){
+  flip <- sample(0:1, size = num_flips, replace = T)
+  mean(flip) # where 1 is heads
+}
+coin_flip(3)
+coin_flip(8)
+```
+##### Replicate()
+* Repeatedly reevaluates an expression n times
+* flip a coin 8 times, replicate(n) times
+```{r}
+replicate(10, coin_flip(100)) # we are expecting values around 0.50
+mean(replicate(10, coin_flip(100))) 
+xbar <- replicate(100, coin_flip(2))
+table(xbar) %>% # contingency table -- returns outs at each factor level
+  proportions(.) %>% # expresses table output as fractions
+  plot(.) # Useful for exploratory data analysis
+```
+
+##### Sampling distribution of xbar  
+* Central Limit Theorem
+  + For large enough n, the distribution of xbar_n is close to the normal distribution with mean mu and variance (sigma^2)/n
+* For our coin example:
+  + mu = 0.5 (proportion of success)
+  + variance = p * (1-p) = 0.5 * (1 - 0.5)
+
+```{r}
+samp_mean_plot <- function(n_flips, n_sim){
+  replicate(n_sim, coin_flip(n_flips)) %>%
+    table(.) %>%
+    proportions(.) %>%
+    plot(.)
+}
+
+samp_mean_plot(100,1000)
+
+replicate(1000, coin_flip(100)) %>%
+  hist(., prob = T)# histogram of results 
+curve(dnorm(x, mean = .5, sd = sqrt(.25/100)),
+      from = .3, to = .7, add = T)
+```
+
+#### Conditional Execution (if statements)
+* Single condition
+  + if(CONDITION) {  
+    block of code if condition is true  
+  }
+  + else {  
+    block of code if condition is false  
+  }  
+* Multiple conditions
+  + if(CONDITION) {  
+    block of code if condition is true  
+  }  
+  + else if (CONDITION 2){  
+    block of code if condition is true  
+    }
+  + else {  
+    block of code if condition is false  
+  } 
+
+##### Example:
+* Optionally (as specified by user), plot the "proportion of heads" values from flipping a coin n times over n_sim repitions, otherwise just return the vector of proportions (use if else in your function)
+```{r}
+example_1 <- function(n_flips, n_sim, plot = T) {
+  if (plot == T) {
+        replicate(n_sim, coin_flip(n_flips)) %>%
+        hist(., prob = T) # Density histogram, not frequency
+  }
+  else if (plot == F) {
+        replicate(n_sim, coin_flip(n_flips))
+  }
+}
+example_1(5,10,plot = F)
+example_1(5,10,plot = T)
+```
+
+### Objects in R
+
+#### Atomic vectors
+* What counts as a vector
+  + Anything with c()
+  + Singular values are vectors with length 1
+* To analyze a vector:
+  + Check if it is as vector using:
+    * is.vector()
+  + Find the length of a vector using:
+    * length()
+* Requirements
+  + All values in a vector must be of the same data type
+    * DATA TYPES IN R
+      + Doubles
+      + Integers
+      + Characters
+      + logicals
+      + complex
+      + raw
+    * How to ask what type of data the object is
+      + typeof()
+```{r}
+die1 <- c(1,2,3,4,5)
+five <- 5
+is.vector(die1)
+is.vector(5)
+length(die1)
+length(5)
+typeof(die1)
+typeof(five)
+```
+#### Doubles
+* A numeric value that can be expressed as a floating point number (decimal)
+* Accurate up to about 16 significant digits
+
+#### Integers
+* Numbers that can be written without a decimal component
+* Can be avoided by storing your objects as doubles
+* You can create integers in R by following numbers with "L"
+```{r}
+int <- c(-1L, 4L, 1L)
+typeof(int)
+typeof(int + 1) # now double
+die <- 1:6 # stored as integers
+```
+#### Character
+* Create:
+  + Surround in "quotes"
+* Note:
+  + strings are character data types
+```{r}
+text <- c("Hello", "World")
+typeof(text)
+typeof("1")
+```
+#### Logicals
+* Store TRUEs and FALSEs, R's form of Boolean data
+* T and F are shorthand for these
+* A comparison statement is a logical because it returns a logical
+```{r}
+logic <- c(TRUE, FALSE)
+typeof(logic)
+typeof(3 > 4)
+
+logic2 <- c(3 > 4, 4 > 3)
+logic2
+
+typeof(is.vector(die)) # also logical
+```
+#### Complex and Raw
+(See Hands On Programming for R, 5.1.5)
+
+#### Attributes
+* Definition:
+  + A piece of information that you can attach to a vector, or any R object. Think of as "metadata". They do not effect the values of the object.
+  + Are unaffected by operations to the objects
+* Attributes()
+  + Returns the attributes of a given object
+    * Null - R's way to represent the empty set, or empty object
+* Most common attributes:
+  + Names
+  + Dimensions
+  + Classes
+```{r}
+attributes(die)
+```
+##### Names
+* names()
+  + extracts name attribute of a given object
+  + can use to assign names to this object
+* To remove names attribute
+  + names(die) <- NULL
+```{r}
+names(die)
+names(die) <- c("one", "two", "three", "four", "five", "six")
+names(die) <- NULL
+```
+  
+##### Dimensions
+* dim()
+  + returns the dimensions of a matrix, array, or data frame
+  + format: number of rows x number of columns
+  + We can also use this to coerce a vector to an array using dim()
+    * BETTER WAY TO CREATE MATRICIES AND ARRAYS (see next section)
+* Example:
+  + mtcars is a dataset in baseR
+  + It has no attributes, but when using dim(), it treats it as a vector and returns the number of rows and columns
+```{r}
+mtcars
+attributes(mtcars)
+dim(mtcars)
+
+dim(die) <- c(2,3) # Defines 2 rows and 3 columns
+die # Now a 2 x 3 matrix
+
+dim(die) <- c(1,2,3) # 3D array (hypercube)
+die
+```
+
+#### Matrices
+* Stores data ALL OF SAME TYPE in a 2 dimensional array
+* Create:
+  + Organize a vector using matrix() function
+    * By default, it fills in one column at a time
+    * To override and create a matrix by rows using byrow = TRUE
+* Analyzing matrices
+  + To take marginal functions of a matrix, use apply()
+    * Syntax:
+      + apply(matrix, margin, function)
+        * Margin specification:
+          + 1 equals rows
+          + 2 equals columns
+```{r}
+matrix(die) # default is n x 1
+matrix(die, nrow = 2) # 2 x 3 matrix
+matrix(die, ncol = 3) # does the same thing
+matrix(die, ncol = 3, byrow = T)
+
+m <- matrix(1:50, ncol = 5)
+m
+
+mean(m)
+apply(X = m, MARGIN = 1, FUN = mean) # returns the mean of each row
+```
+  
+```{r}
+A = matrix(1:6, nrow = 2)
+B = matrix(1:6, ncol = 2)
+C = matrix(1:9, ncol = 3)
+
+dim(A) # gives dimensions of A
+apply(A, MARGIN = 2, FUN = mean) # column means of A
+```
+##### Matrix Math
+* Scalar multiplication
+  + Multiplies every value by a scalar or recycles a vector
+* Matrix addition/subtraction/element-wise multiplication
+  + Matrices must be the same dimensions
+* Matrix multiplication (%*%)
+  + Must have proper dimensions too
+* Matrix transpose t()
+  + rows become columns, columns become rows
+* Matrix operations that only work on **square matrices**
+  + Determinants
+    * det()
+  + Eigenvalues
+    * eigen()
+  + Inverse
+    * solve()
+* Diagonal Matrices
+  + diag(n)
+    * gives an identity matrix of n rows, n columns
+  + diag(1:5)
+    * gives an identity matrix of size(n) rows and size(n) columns
+  + diag(3, nrow = 5)
+    * more explicit
+```{r}
+2 * A # multiplies every value by the scalar
+c(1,2) * A # vector recycling
+A %*% B # gives a 2 x 2
+c(1,2) %o% c(1,2) # outer product
+t(A) # transpose of a matrix
+det(C) # Singular
+D <- matrix(runif(9), nrow = 3)
+det(D)
+eigen(D) # returns eigen values and eigen vectors
+solve(D) # inverse of D
+solve(D) %*% D # returns ALMOST the identity, rounding the error
+diag(5)
+diag(1:5)
+diag(3, nrow = 5) # more explicit
+```
+
+##### Subsetting and Changing Matrix Values
+###### Subsetting
+* Subset to a single value
+  + A[row, column]
+* Subset to another matrix
+  + A[rows, columns]
+* Subset a single column or row
+  + A[1,]
+  + A[,1]
+* Subset using negative integers
+  + negative integers do the **exact opposite** of positive int
+    * returns every element EXCEPT the negative indices
+    * (works for vectors too)
+* Subset using logicals
+  + Supply a vector of TRUEs and FALSEs equal in length to the dimension you're referencing.
+  + R matches each T or F to the corresponding row or column
+  + Returns those that match with T
+  + **Useful because this means we can give comparison statements into subset statements**
+```{r}
+A[1,1]
+A[1:2, 1:2]
+A[1,]
+A[,1]
+
+B <- matrix(10:15, nrow = 2)
+B[-1, -1] # Equivalent to B[2, c(2,3)]
+
+# for vectors
+vec <- 10:15
+vec[-c(1,2)] # all but the first two indicies
+
+# logical subsetting
+vec[c(T,T,F,F,F,T)]
+vec[vec > 12] # returns all values greater than 12 using logical indexing
+B[B > 12] # Coerces to a vector
+B[1:4] # Coerces to a vector, reads indexes by column
+
+# example:
+ident <- diag(5)
+ident[ident == 0] <- 1 # changes all 0s to 1s
+ident 
+```
+
+###### Changing matrix values
+* Change a single value
+  + A[1,1] <- 17
+* Change a row
+  + A[1,] <- c(4,6,8)
+```{r}
+A[1,1] <- 7
+A
+A[1,] <- c(4,6,8)
+A
+```
+  
+###### Turning a data frame / tibble into a matrix
+* Using as.matrix()
+
+###### Adding rows / columns to a matrix
+* Adding columns
+  + cbind()
+* Adding rows
+  + rbind()
+```{r}
+cbind(A,A)
+rbind(A,A)
+rbind(A,1) # adds a constant row of 1s
+cbind(A,0) # adds a constant row of 0s
+```
+  
+#### ICE
+* Write a function to make an m x n matrix square:
+  + add rows or columns of 0s with 1s in the diagonals
+  + if matrix is already square, leave as is
+```{r}
+make_square <- function(A){ # not sure how this is supposed to work
+  nr <- dim(A)[1]
+  nc <- dim(A)[2]
+  square_dim = max(dim(A))
+  square_mat <- diag(square_dim)
+  A <- square_mat[1:nr, 1:nc]
+  A
+}
+
+
+
+A <- matrix(1:3, nrow = 3, ncol = 3)
+A
+make_square(B)
+
+
+square <- function(A){
+  nr <- dim(A)[1]
+  nc <- dim(A)[2]
+  if(nr > nc){
+    X <- diag(nr)
+    return(cbind(A,X[,(nc+1):nr]))
+  } else if(nc > nr){
+    X <- diag(nc)
+    return(rbind(A,X[(nr+1):nc,]))
+  } else{return(A)}
+}
+
+square(B)
+```
+
+#### Arrays
+* General function **array()**
+  + Creates an n-dimensional array
+* Can use the **apply()** function with arrays
+  + But...harder to think about than matricies
+```{r}
+# Creating an array
+ar <- array(c(1:4, 5:8, 9:12, 13:16), dim = c(2,2,4)) # a 2 x 2 matrix with 4 layers
+ar
+
+# Using the apply() function
+apply(ar, 1, mean) # mean across each row
+apply(ar, 2, mean) # mean across each column
+apply(ar, 3, mean) # mean across each "slice"
+apply(ar, c(1,2), mean) # mean across each "quadrant" 
+
+ar[1,,] # grab the first row (the mean of these is 8)
+ar[2,,] # grabs the second row (mean is 9)
+```
+
+#### Lists
+* Unlike vectors, lists group together R objects
+* List elements do NOT have to be of the same data type, dimension, class, etc.
+* To create a function, use **list()**
+  + Use like the **c()** function
+  + Can be saved as a vector in R
+    * Lists can themselves be list elements or other lists
+* To name list elements:
+  + list("name_1" = element_1,
+         "name_2" = element_2)
+  + You don't need surrounding quotation marks unless it has a space (I think)
+* Functions can return lists too:
+  + This is a way to return more than one R object in a function
+```{r}
+# Creating a vector
+list(vec, B, ar) # 1st element -> vector
+                 # 2nd element -> matrix
+                 # 3rd element -> array
+
+# Saving a vector as an object in R
+list1 <- list("R",
+              100:130,
+              list(1:5, 6:10))
+list1
+
+# Naming list elements
+list2 <- list("one" = 1:5,
+              "two" = "A",
+              "three" = c(T,F))
+list2
+
+x <- list(a = 10:13,
+          b = "a string",
+          c = pi,
+          d = list(-1,5))
+
+# Functions can return lists
+func <- function(vec1, vec2){
+  list(vec1, vec2)
+}
+func(1:3, 1:7)
+```
+  
+##### Subsetting lists
+* **[]** -> extracts sub-lists (where the list structure is maintained)
+  + list1[element_num]
+  + list1["name1"]
+  + list1[c(1,2)]
+* **[[]]** -> extracts a **single** component of a list, and removes list structure for that level of the hierarchy
+* **$**
+  + Shorthand for extracting named elements of a list
+* Using both **[[]]** and **$**
+  + enables us to extract specific elements within lists
+```{r}
+# []
+list2[1]
+list2["one"]
+typeof(x[1]) # returns list (list structure is maintained)
+
+# [[]]
+x[[1]]
+typeof(x[[1]]) # returns integer
+
+x[["a"]]
+typeof(x[[4]]) # returns list (element 4 is a list)
+
+# $
+x$a
+
+# [[]] and $
+x$a[1:3]
+x[[1]][1:3] # Equivalent
+```
+
+##### Viewing Lists
+* **str()** is useful for viewing lists in a compact format
+* You can also check it out in the environment
+```{r}
+y <- list("a", 1:10000, 1:5, TRUE)
+str(y) # shows structure of an object
+```
+
+##### Functions returning lists
+```{r}
+# Example:
+my_test <- t.test(rnorm(100))
+str(my_test)
+my_test$p.value
+my_test$conf.int
+```
+
+#### Tibbles / Data Frames
+* Tibbles and Data Frames are **lists**
+  + However, all the elements of a tibble/df must be vectors of the same length
+  + You can create a tibble from a list
+  + You can extract elements of these similar to lists
+* Creating tibbles/df
+  + tibble()
+  + data.frame()
+```{r Useful functions}
+# for data frames
+StudentScores <- data.frame("Midterm1Score" = 78 : 81, "Midterm2Score" = 82 : 85)
+
+StudentScores$StudentNum <- 1:4
+StudentScores[,c(3,1,2)]
+
+StudentScores[,c(3,1,2)] # cool way to rearrange stuff
+
+# for tibbles
+a <- 1:10
+b <- 11:20
+tibble("column_1" = a, "column_2" = b) 
+```
+  
+```{r}
+# Example for the diamonds dataset
+diamonds
+typeof(diamonds) # returns list!
+
+# Creating a tibble from a list
+as_tibble(list(x = 1:3, y = 4))
+
+# Extracting elements from a tibble
+diamonds[[1]][1:6] # Extracts vector representing the first column of a tibble/df (I restricted the output to 6 elements)
+
+# Can construct tibbles/dfs using (great for naming columns!)
+tb <- tibble(x = 1:5, y = 5:1)
+df <- data.frame(x = 1:5, y = 5:1)
+```
+
+#### Classes
+* Factors
+  + Represent cat. data with a fixed set of possible values
+  + Every factor must have a "levels" attribute
+  + Factors are built on top of integers
+```{r}
+attributes(tb) # shows you the classes
+typeof(diamonds$cut)
+diamonds$cut[1:6] # restricting output
+unclass(diamonds$cut[1:6]) # removes factor class, returns integer values
+as.numeric(diamonds$cut[1:6]) # reclassifies these under a numeric class
+```
+#### Exercise
+* Write a function to return a random boggle board in a 4 x 4 matrix
+* Also return the number of vowels in the resulting board
+* Name each element of the list output
+```{r}
+# Boggle die
+get_board <- function(){
+  d1 = c('S','R','E','L','A','C')
+  d2 = c('D','P','A','C','E','M')
+  d3 = c('Qu','B','A','O','J','M')
+  d4 = c('D','U','T','O','K','N')
+  d5 = c('O','M','H ','R','S','A')
+  d6 = c('E','I','F','E','H','Y')
+  d7 = c('B','R','I','F','O','X')
+  d8 = c('R','L','U','W','I','G')
+  d9 = c('N','S','O','W','E','D')
+  d10 = c('Y ','L','I','B','A','T')
+  d11 = c('T','N','I','G','E','V')
+  d12 = c('T','A','C','I','T','O')
+  d13 = c('P','S','U','T','E','L')
+  d14 = c('E','P','I','S','H ','N')
+  d15 = c('Y','K','U','L','E','G')
+  d16 = c('N','Z','E','V','A','D')
+  
+  dice <- matrix(c(d1,d2,d3,d4,d5,d6,d7,d8,
+                  d9,d10,d11,d12,d13,d14,d15,d16),
+                ncol = 16) # putting each die into a separate column in the matrix
+  
+  faces <- apply(dice, 2, sample, size = 1) # 1st randomization (roll)
+  
+  board <- matrix(sample(faces, size = 16), nrow = 4, ncol = 4) # 2nd randomization (placement)
+  
+  list(board = board,
+       vowels = sum(stringr::str_detect(board, "[AEIOU]")))
+}
+
+get_board()
+```
+
+* What if we want to know the average number of vowels in a board?
+  + approximate it through simulation (Monte Carlo)
+    * While we could use replicate(), we could also use a loop to do this...
+
+### For Loops and map() + related functions
+* A way to give repetitive instructions to R
+  + Warning! Often not the most efficient way!
+* General Structure
+  + for(SEQUENCE DEFINITION){  
+    CODE BLOCK  
+    }
+  + for(value in X){  
+    STUFF  
+    }
+  + for(i in X){  
+    STUFF  
+    }
+* What's going on...
+  + Creates an option named "value" in our global environment and assigns it a new value on each run of the loop
+  + **WARNING**
+    * Be aware of values remaining in the environment
+* Saving output from a loop
+  + Write the loop such that it saves as it runs
+    * Create an empty vector (or list) beforehand
+    * Instead of sequencing on a set of objects, sequence on a set of integers that index the objects
+
+```{r}
+# General Structure of a loop
+for (value in c("My", "first", "for", "loop")){
+  print("one run")
+} # prints "one run" 4 times
+
+# What's going on
+for (value in c("My", "first", "for", "loop")){
+  print(value)
+} # the value of "value" changes for each loop
+
+# Saving output from a loop
+my_vec <- rep(NA, 4) # creating an empty vector (of NAs)
+
+for (i in c("My", "first", "for", "loop")){
+  my_vec <- i
+} # NOT HELPFUL -> does not assign to a unique index
+
+words <- c("My", "first", "for", "loop")
+for (i in 1:4){
+  my_vec[i] <- words[i]
+  print(my_vec[i])
+} # a better way to do this
+
+my_vec <- rep(NA, length(words))
+for(i in 1:length(words)){
+  my_vec[i] <- words[i]
+} # the BEST way to do this
+```
+
+#### Back to the boggle example
+* Write a for loop to aid in estimating the average number of vowels on a boogle board
+```{r}
+# NUM_REPS <- 1000
+# boggle_vec <- rep(NA, NUM_REPS)
+# for(i in 1:NUM_REPS){
+#   boggle_vec[i] <- get_board()$vowels
+# }
+# mean(boggle_vec)
+
+# to plot results:
+# table(boggle_vec)
+# plot(boggle_vec, table(boggle_vec), type = "h")
+```
+* Create a boggle timer
+```{r Boogle Timer}
+# for(i in 180:0){
+#   # print(i) # Print remaining time
+#   cat(i, "\r") # prints the i, then removes it (stays on the same line)
+#   Sys.sleep(1) # wait for 1 second
+# }
+```
+
+#### What if: known sequence length, unknown output length
+```{r}
+means <- runif(10)
+
+for(i in 1:length(means)){
+  n <- sample(1:10, size = 1) # random number 1 through 10
+  rnorm(n, means[i])
+  print(rnorm(n, means[i]))
+}
+
+# 1st way to do this...
+
+output <- double()
+
+for(i in 1:length(means)){
+  n <- sample(1:10, size = 1) # random number 1 through 10
+  rnorm(n, means[i])
+  output <- c(output, rnorm(n, means[i])) # inefficient, R reallocates memory at each iteration
+}
+
+# 2nd way to do it...
+
+output <- vector("list", length(means))
+
+for(i in 1:length(means)){
+  n <- sample(1:10, size = 1) # random number 1 through 10
+  rnorm(n, means[i])
+  output[[i]] <- rnorm(n, means[i])
+}
+
+output
+
+unlist(output) # concatenates to a single vector
+```
+
+##### Seq_along()  
+* Safer when you could have a 0-length sequence call
+  + same as saying 1:length(x) in a for loop
+
+```{r}
+for(i in seq_along(means)){
+    n <- sample(1:10, size = 1) # random number 1 through 10
+  rnorm(n, means[i])
+  output[[i]] <- rnorm(n, means[i])
+}
+```
+
+#### While loops
+* Use with an unknown sequence length
+* While loops rerun chunk of code as long as a specified condition remains TRUE
+* Syntax
+  + while(condition){  
+    code  
+  }
+* CAUTION: beware of infinite loops!
+
+```{r}
+# example of an infinite loop -> DON'T RUN!
+
+x <- 10
+
+# while(x > 5){
+#   rnorm(1)
+# }
+
+# a better way to do this...
+x <- 10
+iter <- 1
+while(x > 5 & iter < 10000){
+  cat(iter, "\r")
+  x <- x - rnorm(1)
+  iter <- iter + 1 # tells us how many iterations were needed to get x > 5
+}
+```
+#### Exercise: 
+* Use a while loop to create a boggle board with NO vowels
+  + (Qu die doesn't count as a vowel)
+  + If it's taking longer than 1000 iterations, stop the loop
+* How many iterations did the loop take?
+
+```{r eval = TRUE}
+vowels <-  T
+iter <- 1
+while(vowels & iter <= 1000){
+  cat(iter, "\r")
+  board <- get_board()
+  vowels <- board$vowels > 0
+  iter <- iter + 1
+}
+```
+
+#### Error handling and checking values
+* Returning Errors
+  + if(something){  
+      stop("Error message")  
+      }
+* Returning Warnings
+  + if(something){  
+      warning("Warning message")  
+      }  
+  + To print out last 50 warnings, use function **warnings**
+```{r Error handling and checking values}
+wt_mean <- function(x, w){
+  sum(x * w)/sum(w)
+}
+
+wt_mean(1:6, 1:6)
+
+# what if I pass in vectors of different lengths?
+
+wt_mean(1:6, 1:3) # works bc of vector recycling
+
+wt_mean<- function(x, w){
+  if(length(x) != length(w)){
+    return("Error!")
+  }
+  sum(x * w)/sum(w)
+}
+
+wt_mean(1:6, 1:3)
+
+# a more formal way to do this...
+
+wt_mean<- function(x, w){
+  if(length(x) != length(w)){
+    stop("Error! Lengths of x and w are not equal!", call. = T)
+  }
+  sum(x * w)/sum(w)
+}
+
+# wt_mean(1:6, 1:3)
+
+wt_mean<- function(x, w){
+  if(length(x) != length(w)){
+    warning("Warning! Lengths of x and w are not equal!", call. = T)
+  }
+  sum(x * w)/sum(w)
+}
+
+wt_mean(1:6, 1:3)
+```
+
+#### Iteration via functional programming
+
+```{r examples of more efficient coding}
+# example of inefficient coding
+
+f1 <- function(x) abs(x - mean(x)) ^ 1
+f2 <- function(x) abs(x - mean(x)) ^ 2
+f3 <- function(x) abs(x - mean(x)) ^ 3
+
+# a more efficient way to do this 
+
+f <- function(x, i) abs(x - mean(x)) ^ i
+```
+
+```{r more examples}
+# Class code:
+col_mean <- function(df) {
+  output <- vector("double", length(df))
+  for (i in seq_along(df)) {
+    output[i] <- mean(df[[i]])
+  }
+  output
+}
+
+col_median <- function(df) {
+  output <- vector("double", length(df))
+  for (i in seq_along(df)) {
+    output[i] <- median(df[[i]])
+  }
+  output
+}
+
+col_sd <- function(df) {
+  output <- vector("double", length(df))
+  for (i in seq_along(df)) {
+    output[i] <- sd(df[[i]])
+  }
+  output
+}
+
+# making this code more efficient:
+
+col_summary <- function(df, fun){
+  output <- vector("double", length(df))
+  for (i in seq_along(df)) {
+    output[i] <- fun(df[[i]])
+  }
+  output
+}
+
+## testing this code:
+
+df <- tibble(
+  a = rnorm(10),
+  b = rnorm(10),
+  c = rnorm(10),
+  d = rnorm(10)
+)
+
+col_mean(df)
+
+col_summary(df, fun = mean)
+```
+##### map()
+* Map is a for loop under the hood:
+* Applies a function to each element of a list or vector, and returns a list
+  + The (rough) equivalent of **map()** in Base R is **lapply()** 
+    * map_dbl(), map_chr(), etc. -> Base R equivalent is **vapply()**
+    * **vapply()** can also return matrices
+```{r map() under the hood}
+my_map <- function(x, fun){
+  out <- vector("list", length(x))
+  for (i in seq_along(x)){
+    out[[i]] <- fun(x[i])
+  }
+}
+```
+
+* Always returns a list (does not work with arrays or matrices)
+  + **map_dbl()** 
+    * returns a double vector (output same as apply(df, 2, mean))
+  + **map_lgl()**
+    * returns a vector of logicals (the function must return logical values)
+  + **map_int()**
+    * returns integer vector
+  + **map_chr()** 
+    * returns character values
+```{r ways of using map()}
+out <- vector("list", length(df))
+
+for(i in 1:length(df)){
+  out[i] <- mean(df[[i]])
+}
+
+out
+
+out <- map(df, mean) # exact same thing
+
+out
+
+## different ways of using map()
+map_dbl(df, mean)
+map_lgl(df, is.numeric)
+map_chr(df, mean)
+
+x <- rnorm(4)
+map(x, round)
+```
+
+```{r In Class Exercise}
+# write the same code but get rid of the loop using map functions:
+vec <- seq(-5, 5, by = 1)
+out <- rep(NA, length(vec))
+for (i in 1:length(vec)){
+  out[i] <- rnorm(10, mean = vec[i]) %>%
+    t.test(.) %>%
+    .[[3]] # extracts the p-value
+}
+plot(vec, out)
+
+# answer
+vec %>%
+  map(., ~rnorm(10, mean = .x)) %>% # the .x is important because it prevents the dots from being confounded
+  map(., t.test) %>%
+  map_dbl(., ~.x[[3]]) %>%
+  plot(vec, .)
+
+# or an easier way to do this would be...
+vec %>%
+  map_dbl(., ~rnorm(10, mean = .x) %>%
+        t.test(.) %>%
+        .[[3]]) %>%
+  plot(x = vec, y = .)
+```  
+##### Nesting maps  
+```{r}
+letter_count <- matrix(nrow = 720, ncol = 26)
+
+# a)
+for (i in 1:length(sentences)){
+  for (j in 1:26){
+    letter_count[i,j] <- str_count(tolower(sentences[i]), letters[j])
+  }
+}
+
+letter_count
+
+# b) # nesting mapping
+map(sentences, function(x) map_int(letters, function(y) str_count(tolower(x), y))) %>% # refer to them as x and y not .x and .y
+  unlist() %>%
+  matrix(nrow = 720, ncol = 26, byrow = T)
+```
+
+##### map2()
+* Map2() specifies separate arguments for a pair of lists or vectors
+* What if we wanted to simulate data with different means AND different SDs?
+```{r Motivational Example}
+sigma <- runif(length(vec))
+tibble(vec, sigma)
+
+map2(vec, sigma, ~rnorm(n = 10, mean = .x, sd = .y)) %>%
+  .[[1]] # just limiting output for readability
+```
+##### pmap()
+* Apply a function to groups of elements from a list of lists or vectors, return a list
+  + all input vectors must be given in a single list
+```{r What if we want diffent sample sizes based on a provided vector?}
+samp_size <- sample(c(5,10,15), size = length(vec), replace = T)
+
+pmap(list(vec, sigma, samp_size), ~rnorm(n = ..3, mean = ..1, sd = ..2)) %>% # the ..i refers to the ith element of the list/vector
+  .[[3]] # limiting size for readability 
+
+pmap(list(samp_size, vec, sigma), rnorm) %>% # puts input vectors into function
+  .[[3]]
+```
+
+```{r Motivational example for the walk() function}
+mu <- seq(-2,2,length.out = 4)
+sigma <- runif(length(mu))
+sample_size <- c(50,100,150,200)
+
+params <- tibble(mu, sigma, sample_size)
+params
+
+# Use p-map to generate data:
+dat <- pmap(params, ~rnorm(n = ..3, mean = ..1, sd = ..2))
+dat
+
+# I want to plot histograms of each sample
+# 1) all plots on same window
+par(mfrow = c(2,2)) # Plotting window with 2 rows and 2 cols
+
+# loop
+for (i in 1:length(dat)){ # length() gives you the columns, not rows) (can also do for (i in seq_along(dat)))
+  hist(dat[[i]])
+}
+
+# could i do this with map?
+map(dat, hist) # this gives us more information than we really want about the histogram
+
+# equivalent (what map was doing)
+out <- vector("list", 4)
+for (i in seq_along(dat)){
+  out[[i]] <- hist(dat[[i]])
+}
+out
+```
+
+##### Walk()
+* An alternative for map(), used when you want to call a function for its side effects rather than its return
+  + For example, when you only want something to print or only want a histogram...
+  + Does not return any output in the console like map() does
+
+```{r Example of how to use walk()}
+par(mfrow = c(2,2))
+x <- list(1, "a", 3)
+
+# Weird way of using map -> gives unnecessary/undesired output
+x %>%
+  map(print)
+
+# Using walk -> much cleaner
+x %>%
+  walk(print)
+
+# Using walk for our above motivating example:
+walk(dat, hist, breaks = 50) # only get the histograms and not a ton of unwanted output
+
+par(mfrow = c(1,1))
+```
+
+```{r Example of why you should use .x and not . in map/walk}
+
+# these dots are getting confused. 
+mu %>%
+  walk(., ~rnorm(5, mean = .) %>% # generate 5 random normals
+         hist(main = paste("Mean = ", .))) # plot histogram of draws
+
+# a better way to do this... (dots get confounded, reference things I didn't intend them to!)
+# use .x to deliniate when pipes are involved with map/walk
+mu %>%
+  walk(., ~rnorm(5, mean = .x) %>% # using .x to refer to the vector that you are iterating over
+         hist(main = paste("Mean = ", .x)))
+```
+
+
+### Speeds of functions
+* Tracks CPU speed / runtime of R code
+```{r}
+system.time(rnorm(100000))
+
+# Don't confuse with:
+Sys.time() # which gives current time
+
+# Can save as an object (this only save the time in the output)
+
+out_time <- system.time(rnorm(1000000))
+
+out_time
+
+# to keep track of multiple lines:
+out_time <- system.time({
+  out <- rnorm(1000000)
+})
+```
+
+#### Vectorizing
+* Vectorized code means that the code can take a vector of values as input and manipulates each value in the vector at the same time (NOT iteratively like a for loop)
+```{r not vectorized functions}
+
+# for loop
+
+abs_loop <- function(vec){
+  for (i in 1:length(vec)){
+    if (vec[i] < 0) {
+      vec[i] <- -vec[i]
+    }
+  }
+  vec
+}
+
+# map
+abs_map <- function(vec){
+  map_dbl(vec, ~if(.x < 0){.x} else{.x})
+}
+```
+
+```{r a vectorized function}
+abs_sets <- function(vec){
+  neg_inds <- vec < 0 # vectorized
+  vec[neg_inds] <- vec[neg_inds] * -1
+  vec
+}
+```
+
+```{r Testing the CPU Times of These Functions}
+long <- rep(c(1,-1), 800000)
+system.time(abs_loop(long))
+system.time(abs_map(long)) # slowest
+system.time(abs_sets(long))
+system.time(abs(long)) # base R functions are optimized for speed
+
+```
+
+##### Clues for spotted code that can be vectorized
+* Vectorized code usually takes advantage of three things:
+  + Logical Tests
+  + Subsetting
+  + Element-wise execution
+    * c(1,2,3)*3 is also vectorized
+* Examples
+  + Combination of a for loop with if statement --- often can be vectorized with logical subsetting
+
+##### Principles to make for loops faster
+1) Every line of code in a for loop runs each time. If you only need to run something once, remove from loop  
+
+```{r Removing redundant lines of code from loops}
+
+static_mat <- matrix(rnorm(9), 3, 3) # random 3x3 matrix
+
+system.time({
+  for (i in 1:10000){
+    matrix(runif(9), 3, 3) %*% solve(static_mat)
+  }
+})
+
+# a better way to do this:
+
+system.time({
+  mat_inv <- solve(static_mat)
+  for (i in 1:10000){
+    matrix(runif(9), 3, 3) %*% mat_inv
+  }
+})
+
+```
+
+2) Be Smart About Storage
+
+```{r Be Smart About Storage}
+# Best way to do this:
+system.time({
+  output <- rep(NA, 100000)
+  for(i in 1:10000){
+    output[i] <- i + 1
+  }
+})
+
+# Not as efficient (but is not that much worse)
+system.time({
+  output <- NA
+  for(i in 1:100000){
+    output[i] <- i + 1
+  }
+})
+
+# worst by far
+system.time({
+  output <- NULL
+  for(i in 1:1000){
+    output <- c(output, i + 1)
+  }
+}) # reduced the number of 0s becuase it takes way longer
+```
+
+##### More examples:
+```{r}
+n <- 5
+system.time({
+  out <- rep(NA, n)
+  for (i in 1:n){
+    cat(i, "\r")
+    out[i] <- i
+    Sys.sleep(1)
+  }
+})
+
+system.time({
+  out2 <- rep(NA, n)
+  for (i in 1:n){
+    cat(i, "\r")
+    out2[i] <- (solve(matrix(runif(1000000), 1000) + diag(1000))) %>%
+      det()
+  }
+})
+
+
+```
+#### Run in parallel
+* Farming out the jobs is not always as efficient as just running it on one core
+  + Best to use when one iteration takes a long time
+* Also nice to do when you have access to a server that has a ton of cores
+
+```{r eval = FALSE}
+# Set up cluster
+parallel::detectCores()
+
+# Tell R how many cores to use
+
+n.cores <- parallel::detectCores() - 1
+my.cluster <- parallel::makeCluster(n.cores)
+doParallel::registerDoParallel(my.cluster)
+
+system.time({
+  out <- foreach::foreach(
+    i = 1:n,
+    .combine = "c" # could use "cbind" or "rbind"
+  ) %dopar% { # specify the job that we want to be done
+    Sys.sleep(1) # represent computationally intense code
+    i # last line gets returned as output
+  }
+})
+
+# when it is probably not as efficient as a simple loop
+system.time({
+  out <- foreach(
+    i = 1:1000,
+    .combine = "c"
+  ) %dopar% {
+    mean(rnorm(1000))
+  }
+})
+
+system.time({
+  out <- rep(NA, 1000)
+  for(i in 1:1000){
+    out[i] <- mean(rnorm(1000))
+  }
+})
+
+# when you need packages loaded on other computers
+
+system.time({
+  out <- foreach(
+    i = 1:2,
+    .combine = "c",
+    .packages = c("tidyverse")
+  ) %dopar% {
+    solve(matrix(runif(1000000), 1000) + diag(1000)) %>%
+      det()
+  }
+})
+
+```
+
+
+### Basics of R Markdown (see new RMD)
+```{r}
+library(foreach)
+library(doParallel)
+```
+
+
+### Lubridate
+* Used for working with date and time formats in R  
+
+#### Date Formats
+
+```{r collapse = TRUE}
+today() %>% class()
+today()
+
+# creating date formatted data
+
+my_life <- seq(as.Date("2002/09/02"),
+               as.Date("2022/04/06"), by = "day")
+
+sample_days <- sample(my_life, 50)
+sample_days
+```
+
+```{r collapse = TRUE}
+my_dates <- data.frame(date1 = sample_days) %>%
+  mutate(date2 = format(date1, "%A, %B, %d, %Y"),
+         date3 = format(date1, "%d%m%Y"),
+         date4 = format(date1, "%d%m%y"),
+         date5 = format(date1, "%Y/%m,%d"),
+         happy = runif(50))
+
+my_dates %>% str() # R only knows that this first column is a date
+
+ggplot(data = my_dates, mapping = aes(date1, happy)) +
+  geom_line() # this works because "date1" is recognized as a date
+
+ggplot(data = my_dates, mapping = aes(date2, happy)) +
+  geom_line() # this does not work because it is not formatted as a date
+
+```
+
+#### Parsing character strings to date format
+
+* The functions used for this are dmy(), ymd(), and mdy()
+
+```{r collapse=TRUE}
+mdy(my_dates$date2)
+dmy(my_dates$date3)
+dmy(my_dates$date4)
+
+# trying multiple formats in the same vector
+dmy(c(my_dates$date4,
+      my_dates$date3)) # THIS WORKS!
+
+# trying the plots again...
+ggplot(data = my_dates, mapping = aes(mdy(date2), happy)) +
+  geom_line()
+```
+```{r Trying this with flights() data}
+library(nycflights13)
+
+flights2 <- flights %>%
+  mutate(flight_date = make_date(year = year,
+                                 month = month,
+                                 day = day)) %>%
+  select(flight_date, everything()) # the everything() puts all variables behind this one
+
+# Create a line plot of date on x-axis, number of flights that day on y-axis
+
+flights2 %>%
+  group_by(flight_date) %>%
+  summarize(flight_count = n())
+
+flights2 %>%
+  count(flight_date) %>% # group_by(x), summarize(n)
+  ggplot(aes(flight_date, n)) +
+  geom_line()
+
+```
+
+```{r}
+flights2 %>%
+  mutate(day_of_week = wday(flight_date, label = T),
+         week_of_yr = week(flight_date)) %>%
+  group_by(week_of_yr) %>%
+  count(day_of_week) %>%
+  ggplot(aes(day_of_week, n)) +
+  geom_point()
+
+wday_avg <- flights2 %>%
+  mutate(day_of_week = wday(flight_date, label = T),
+         week_of_yr = week(flight_date)) %>%
+  group_by(week_of_yr) %>%
+  count(day_of_week) %>%
+  summarize(n = mean(n))
+  
+# plotting
+
+ggplot(wday_avg, aes())
+
+
+# another solution
+flights2 %>%
+  count(flight_date) %>%
+  ggplot(aes(wday(flight_date, label = T), n)) +
+  geom_point()
+
+# another solution
+flights2 %>%
+  mutate(day_of_week = wday(flight_date, label = T),
+         week_of_yr = week(flight_date)) %>%
+  count(week_of_yr, day_of_week) %>%
+  ggplot(aes(day_of_week, n)) +
+  geom_point()
+```
+
+#### Dates and Times
++ ymd() and friends to create/parse dates.
++ To parse/create date-times we add an underscore and one or more of the "h", "m", and "s" to the parsing function
+```{r collapse=TRUE}
+a <- "2017-01-31 20:11:59"
+b <- "Friday, Apr 8th, 2020 at 8:01 AM"
+```
+
+##### Time Zones
+* How to get your current time zone
+```{r}
+Sys.timezone() # R's code for our current timezone
+
+mdy_hm(b, tz = "America/Denver")
+```
+
+* All Availiable Time Zones
+```{r}
+OlsonNames()[1:10] # restricted to simplify output. 
+```
+
+* Time zones are respected when plotting
+
+```{r warning=FALSE}
+par(mfrow = c(1,1)) # to return to a normal plotting grid
+
+plot(x = c(mdy_hm(b, tz = "US/Eastern"),
+           mdy_hm(b, tx = "US/Pacific")),
+     y = 1:3) # not sure what the point of this is...
+```
+
+#### Pulling elements from a date/time
+```{r collapse = TRUE}
+year(a)
+day(a) # etc
+```
+
+#### Example:
+```{r}
+flights3 <- flights %>%
+  mutate(departure_dt = make_datetime(year,
+                                      month,
+                                      day,
+                                      hour,
+                                      minute,
+                                      tz = "US/Eastern")) %>%
+  select(departure_dt, everything())
+
+flights3[1:10, ] # to reduce output
+```
+
+### Paste()  
++ Converts its arguments to characters, then pastes them together into one string.
++ By default, paste() separates the elements with a space. 
+  * We can change this using the (sep = ) argument
+  * the \n is a new line (as shown in the example below)
++ paste0() is a paste with no delimiter
++ collapse
+  
+```{r}
+# I want to plot 9 histograms of normal data, each with diff means and std
+
+par(mfrow = c(3,3)) # 3 rows by 3 col in plot window (doesn't quite work in RMD)
+
+mu <- 1:9
+sigma <- 9:1
+
+for (i in 1:length(mu)){
+  dat <- rnorm(100, mean = mu[i], sd = sigma[i])
+  hist(dat,
+       main = paste("Mean =", mu[i], "\nStd dev =", sigma[i]))
+}
+```
+
+```{r}
+paste(c(1,2), c("hi", "hello"), collapse = ", ")
+```
+
+
+### Homework Sets
+```{r From HW 7 onwards, eval = FALSE}
+# Question 8.1 --------------------------------------------------------
+exp(2)
+e^2
+# exp() is a function in which euler's number (e) is raised to the power of 
+# whatever is in the parenthesis. However, 'e' is not stored as an object in R 
+# that has the value of Euler's number, so the later calculation fails.
+
+
+# Question 8.2 --------------------------------------------------------------
+
+# The order of operations is different in both.
+
+# In the first, (2/5) is evaluated first, and then the entire sum is calculated.
+
+# In the second, (1+3+8+6+2) is evaluated first, and then the division is performed.
+
+# Question 8.3 --------------------------------------------------------------
+
+# are we calculating in degrees or radians?
+(sin(-1.7 + ((0.2 * 0.3 + 0.1)/(0.9*0.3))))/(1.2 - ((0.9-0.4)/(1.8-0.7)))
+
+numerator <- sin(-1.7 + ((0.2 * 0.3 + 0.1)/(0.9*0.3)))
+denominator <- 1.2 - (0.9 - 0.4)/(1.8 - 0.7)
+
+numerator/denominator
+
+
+# Question 8.4 --------------------------------------------------------------
+
+21 / (5 + 2) * 3 
+
+
+# Question 8.5 --------------------------------------------------------------
+
+(3 * 8 / (12 - 6)) ^ 3
+
+
+# Question 8.6 --------------------------------------------------------------
+
+y <- 18:23
+y + 4:6
+y
+
+#This does not generate an error because when it runs out of elements in 4:6, it adds the first element (4) to the remaining values in y.
+
+
+# Question 8.7 --------------------------------------------------------------
+
+?rep
+
+rep(1:4, 2)
+rep(1:4, each = 2)
+rep(1:4, times = 4)
+
+
+# Question 8.8 --------------------------------------------------------------
+
+rep(c(1,2,3), each = 2, times = 3)
+
+# Question 9.1 ------------------------------------------
+get_html_table <- function(url, index = 1, header = T){
+  url %>%
+  read_html() %>%
+  html_elements("table") %>% 
+  html_table(header) %>%
+  .[[index]]
+}
+get_html_table(url = "https://undertoneblog.com/2020/11/18/the-30-best-vulfpeck-songs-of-all-time/", index = 1)
+# Question 9.2 ------------------------------------------
+get_variance <- function(x){
+  n <- length(x)
+  mu <- (1/(n)*sum(x))
+  varX <- (1/(n)*sum((x-mu)^2))
+  varX
+}
+
+get_variance(x = 1:10)
+var(1:10)
+# Question 9.3 -------------------------------------------
+  get_variance_weighted <- function(x, p){
+  n <- length(x)
+  mu <- sum(x*p)
+  varX <- sum(p * (x - mu)^2)
+  varX
+}
+
+get_variance_weighted(x = 1:10, p = c(rep(.01, 9), .91)) # returns 2.6475
+
+# Question 9.4 -------------------------------------------
+get_variance_weighted <- function(x,p = NULL){
+  n <- length(x)
+  if(!is.null(p)){
+    mu <- sum(x*p)
+    varX <- sum(p * (x - mu)^2)
+  }
+  else{
+    mu <- (1/(n)*sum(x))
+    varX <- (1/(n)*sum((x-mu)^2))    
+  }
+  varX
+}
+get_variance_weighted(x = 1:10)
+
+# Question 9.5 --------------------------------------------
+c(typeof(diamonds$carat), typeof(diamonds$cut), typeof(diamonds$color)) #Factors are stored as a vector of integers for efficiency
+
+# Question 9.6 ------------------------------------------
+die <- 1:6
+matrix(die, nrow = 2, ncol = 4) # tries to create a 2 x 4 matrix, but "die" does not have enough observations so it fills in the remaining columns by recycling the values of die (starting from the top). Also, it fills the matrix in column by column
+matrix(die, nrow = 1, ncol = 2) # this forces the data into a 1 x 2 matrix, only keeping the first two observations
+matrix(nrow = 3, ncol = 3) # this just fills a 3 x 3 matrix will NAs.
+
+
+# Question 10.2 --------------------------------------------------------------
+mtcars
+apply(mtcars, MARGIN = 2, max)
+
+# Question 10.3 --------------------------------------------------------------
+matrix(LETTERS, nrow = 13, ncol = 2)
+
+
+# Question 10.4 --------------------------------------------------------------
+
+card_num <- c("2", "3", "0", "Draw 4", "1")
+color <- c("Blue", "Green", "Red", "Wild", "Yellow")
+place_holder <- rep(NA, size = 5)
+Q4 <- matrix(place_holder, nrow = 5, ncol = 2)
+Q4[,1] <- card_num
+Q4[,2] <- color
+
+colnames(Q4) <- c("[Card Num]", "[Color]")
+rownames(Q4) <- c("[Card 1]", "[Card 2]", "[Card 3]", "[Card 4]", "[Card 5]")
+Q4
+
+# Question 10.5 --------------------------------------------------------------
+
+A <- matrix(c(-5,3,2,6,4,-2), nrow = 2)
+A_transpose <- t(A)
+A
+A_transpose
+# Question 10.6 --------------------------------------------------------------
+D <- matrix(c(2,4,7,1,1,6,2,3,3,5,3,2), nrow = 4, ncol = 3)
+E <- matrix(c(1,2,3,4,6,8), ncol = 2)
+
+matrix_product <- D%*%E
+D
+E
+matrix_product
+# Question 10.7 --------------------------------------------------------------
+random_ints <- function(numbers, num_row, num_col){
+  values <- sample(as.matrix(numbers), size = num_col*num_row)
+  matrix(values, nrow = num_row, ncol = num_col)
+}
+random_ints(1:100, 3, 5)
+
+# Question 10.8 --------------------------------------------------------------
+
+Q8 <- function(user_matrix){
+  sum_rows <- apply(user_matrix, MARGIN = 1, sum)
+  sum_columns <- apply(user_matrix, MARGIN = 2, sum)
+  tot_sum <- sum(sum_rows)
+  
+  list("Sum of the Rows" = sum_rows,
+       "Sum of the Columns" = sum_columns,
+       "Total Sum" = tot_sum)
+}
+
+# Question 10.9 --------------------------------------------------------------
+
+mean_plot <- function(user_vector, B = F){
+  vector_mean <- mean(user_vector)
+  if (B == T){
+    plot(user_vector, type = "h")
+  }
+  
+  return (vector_mean)
+}
+
+# Question 10.10 -------------------------------------------------------------
+
+x = list("a", 17, "my_password" = "fuzzy_mittens", 14)
+
+x$my_password
+x[3]
+
+
+# Question 10.11 -------------------------------------------------------------
+
+rotate <- function(A){
+  B <- matrix(rev(t(A)), nrow = dim(A)[2], ncol = dim(A)[1])
+  num_rows <- dim(B)[1]
+  b_swap <- B[1,]
+  B[1,] <- B[num_rows,] 
+  B[num_rows, ] <- b_swap
+  
+  return(B)
+}
+
+Q11_matrix <- matrix(1:9, nrow = 3, ncol = 3)
+rotate(Q11_matrix)
+
+
+# Question 11.8 -----------------------------------------
+# in Base R
+StudentScores <- data.frame("Midterm1Score" = 78 : 81, "Midterm2Score" = 82 : 85)
+
+StudentScores$StudentNum <- 1:4
+col_order <- c("StudentNum", "Midterm1Score", "Midterm2Score")
+final_product <- StudentScores[, col_order]
+final_product
+
+# using Dplyr
+StudentScores %>%
+  add_column(StudentNum = 1:4, .before = T)
+
+# I prefer the second way (many less steps!)
+
+# Question 11.13 ---------------------------------------
+random_walk <- function(n){
+  Z <- c(1, -1)
+  prob_Z <- c(0.5, 0.5)
+  
+  x <- c(0, rep(NA, n))
+  y <- c(0, rep(NA, n))
+  
+  for (i in 2:n){
+    x[i] <- x[i-1] + sample(Z, prob = prob_Z, size = 1)
+    y[i] <- y[i-1] + sample(Z, prob = prob_Z, size = 1)
+  }
+  
+  plot(x, y, type = "l", asp = 1)
+}
+
+random_walk(10000)
+
+
+# Question 12.1 --------------------------------------------------------------
+
+library(tidyverse)
+view(iris)
+
+# a)
+#I want to know how many of the versicolor species have a petal length of over 4.0 and a sepal width of over 2.0.
+#This is the dataset:
+iris
+
+#make an empty dataset
+versicolor <- data.frame(matrix(ncol = 2, nrow = 0))
+#get the rows of data for versicolor
+for(i in 1: nrow(iris)) {
+  if(iris$Species[i] == "versicolor") {
+    versicolor[i,1] <- iris$Petal.Length[i]
+    versicolor[i,2] <- iris$Sepal.Width[i]
+  }
+  versicolor <- na.omit(versicolor)
+  names(versicolor) <- c("Petal Length", "Sepal Width")
+}
+versicolor
+
+#count how many flowers meet the criteria
+flowerCount <- 0
+for(i in 1: nrow(versicolor)) {
+  if(versicolor$`Petal Length`[i] > 4.0 & versicolor$`Sepal Width`[i] > 2.0) {
+    flowerCount <- flowerCount + 1
+  }
+}
+#number of versicolor species that have a petal length of over 4.0 and a sepal width of over 2.0.
+flowerCount
+
+
+# b)
+iris %>%
+  filter(Species == "versicolor",
+         Petal.Length > 4.0,
+         Sepal.Length > 2.0) %>%
+  nrow()
+
+
+# Question 12.2 --------------------------------------------------------------
+
+# a)
+
+# I need to find the proportion of diamonds that cost over $2000 
+# Of those $2000+ diamonds, what proportion are "Premium" cut.
+
+library(tidyverse)
+
+#how many diamonds cost over $2000?
+over2000 <- 0
+for(i in 1:dim(diamonds)[1]) {
+  if (diamonds$price[i] > 2000) {
+    over2000 <- over2000 + 1
+  }
+}
+
+#what is the proportion of diamonds over $2000?
+over2000/nrow(diamonds) # 0.55122
+
+#out of the diamonds that cost over $2000 how many are Premium cut?
+premiumCut <- 0
+for(i in 1:dim(diamonds)[1]) {
+  if (diamonds$price[i] > 2000 & diamonds$cut[i] == "Premium") {
+    premiumCut <- premiumCut + 1
+  }
+}
+
+#what is the proportion of diamonds over $2000 that are Premium cut?
+premiumCut/over2000 #0.28227
+
+# b)
+filter_set <- diamonds %>%
+  filter(price > 2000)
+
+p_twothousand <- filter_set %>%
+  nrow(.)/nrow(diamonds)
+
+p_twothousand #0.55122
+  
+p_premium <- filter_set %>%
+  filter(cut == "Premium") %>%
+  nrow(.)/nrow(filter_set)
+
+p_premium #0.28227
+
+
+# Question 12.3 --------------------------------------------------------------
+
+step_count <- function(my_max){
+  if (!(is.numeric(my_max)) | !(my_max > 0)) {
+    stop("Error! my_max is not a valid input")
+  }
+  else {
+    x <- 0
+    n_steps <- 0
+    
+    while (abs(x) <= my_max){
+      x <- x + sample(c(-1,0,1), size = 1)
+      n_steps = n_steps + 1
+    }
+    
+    return(n_steps)
+  }
+}
+
+step_count(-1)
+step_count("hi")
+step_count(3)
+
+
+# Question 12.4 --------------------------------------------------------------
+
+# a)
+step_vector <- rep(NA, 1000)
+
+for (i in 1:1000){
+  step_vector[i] <- step_count(10)
+}
+
+hist(step_vector)
+
+# b)
+replicate(1000, step_count(my_max = 10)) %>%
+  hist()
+
+
+
+# Question 12.5 --------------------------------------------------------------
+
+my_tbl <- matrix(rnorm(600),nrow=40) %>% as_tibble()
+
+# 1) 
+apply(my_tbl, 2, range)
+
+
+# 2)
+#map does not work with matrices
+
+map(as.vector(my_tbl[,(1:dim(my_tbl)[2])]), range)
+
+
+# 3) -> think about optimizing
+
+for (i in 1:15){
+  print(range(my_tbl[i]))
+}
+
+# Question 12.6 --------------------------------------------------------------
+
+library(nycflights13)
+flights
+
+logical_vector <- map_lgl(flights[,1:(dim(flights)[2])], is.numeric)
+
+logical_vector
+
+# Question 12.7 --------------------------------------------------------------
+
+numbers <- 1:10
+num <- 4
+
+for (i in numbers) {
+  if (i == num) {
+    print(i)
+  }
+}
+
+
+walk(numbers, ~if(.x == num){print(.x)})
+
+# Question 12.8 --------------------------------------------------------------
+
+# a)
+letter_count_a <- matrix(nrow = 720, ncol = 26)
+
+
+for (i in 1:720){
+
+  for(j in 1:26){
+    letter_count_a[i,j] <- str_count(sentences[i],
+                                     regex(letters[j], 
+                                           ignore_case = T))
+  }
+  
+}
+
+letter_count_a
+
+
+# b)
+
+
+letter_count_b <- map(sentences, function(x) map_int(letters, function(y) str_count(x, regex(y, ignore_case = T)))) %>%
+  unlist() %>%
+  matrix(nrow = 720, ncol = 26, byrow = T)
+
+letter_count_b
+
+
+
+
+
+# Question 12.9 --------------------------------------------------------------
+
+avg_letters <- tibble(rep(NA, 26)) %>%
+  mutate(
+    "Letter" = letters,
+    "Average Letter Count" = apply(letter_count_a, MARGIN = 2, mean)
+  )
+
+letter_levels <- avg_letters %>%
+  arrange(desc(`Average Letter Count`)) %>%
+  pull(Letter) %>%
+  as.character()
+
+avg_letters$Letter <- factor(avg_letters$Letter, levels = letter_levels) %>%
+  fct_rev()
+
+avg_letters %>%
+  ggplot(mapping = aes(x = `Average Letter Count`, y = Letter)) +
+  geom_col()
+
+
+# Question 12.10 --------------------------------------------------------------
+
+par(mfrow = c(2,2))
+
+my_maxes <- c(5, 10, 15, 20)
+n_sim <- c(1000, 800, 600, 400)
+for(i in 1:length(my_maxes)){
+  replicate(n_sim[i], step_count(my_maxes[i])) %>% 
+    hist(main = paste("Simulations =", n_sim[i],"\n",
+                      "Max threshold =", my_maxes[i]), 
+         xlab = paste("Iterations until abs(x) >",my_maxes[i]),
+         prob = T)
+}
+
+walk2(my_maxes, n_sim, ~replicate(.y, step_count(.x)) %>%
+        hist(.,
+             main = paste("Simulations =", .y,"\n",
+                          "Max threshold =", .x), 
+             xlab = paste("Iterations until abs(x) >",.x),
+             prob = T))
+                      
+```
+
