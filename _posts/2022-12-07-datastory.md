@@ -25,4 +25,4 @@ By the time Midnights was released, eight albums were on the charts! It seems as
 
 In short, at 32, Swift shows no signs of slowing. Over the eras, she has won over fans with country, pop, electronic, and indie-folk music. With a uniquely creative, authentic voice, she continues to take the music industry by storm. 
 
-*See this [repository](https://github.com/marykebbert/billboard200) for the code used in this project *
+*See this [repository](https://github.com/marykebbert/billboard200) for the code used in this project*
